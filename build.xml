@@ -1,0 +1,103 @@
+<project name="aws" default="war" basedir=".">
+
+	<property name="deploy.context" value="test" />
+	<property name="classes.dir" value="web/WEB-INF/classes" />
+	<property name="src.dir" value="src" />
+	<property name="build.dir" value="build" />
+	<property name="dist.dir" value="dist" />
+	<property name="conf.dir" value="config" />
+	<property name="test.dir" value="test" />
+	<property name="web.dir" value="web" />
+	<property name="src.encoding" value="UTF-8" />
+
+	<path id="aws.test.project.class.path">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- ============================ -->
+	<!-- Init Target             -->
+	<!-- ============================ -->
+
+	<target name="init">
+		<tstamp>
+			<format property="build.tstamp" pattern="MM/dd/yyyy hh:mm aa" />
+		</tstamp>
+		<mkdir dir="${classes.dir}" />
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${build.dir}" />
+	</target>
+
+	<!-- ============================ -->
+	<!-- Clean Target               -->
+	<!-- ============================ -->
+	<target name="clean">
+		<delete failonerror="false">
+			<fileset dir="${classes.dir}" includes="**/*" />
+		</delete>
+
+		<delete dir="${dist.dir}" failonerror="false" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+		<delete dir="${web.dir}/WEB-INF/classes/com" failonerror="false" />
+	</target>
+
+	<!-- ============================ -->
+	<!-- Compile -->
+	<!-- ============================ -->
+	<target name="compile" depends="clean,init">
+
+		<javac destdir="${classes.dir}" debug="true" deprecation="false" nowarn="true" encoding="${src.encoding}">
+			<src path="${src.dir}/com" />
+			<include name="**/*.java" />
+			<classpath refid="aws.test.project.class.path" />
+		</javac>
+
+		<copy todir="${classes.dir}">
+			<fileset dir="${conf.dir}">
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- ============================ -->
+	<!-- WAR Application -->
+	<!-- ============================ -->
+
+	<target name="war" depends="jar" description="Builds the WAR containing the test app">
+		<property name="deploy.context" value="test" />
+		<war warfile="${dist.dir}/${deploy.context}.war" webxml="${web.dir}/WEB-INF/web.xml">
+			<fileset dir="${web.dir}" includes="**/*" excludes="WEB-INF/**,META-INF/**" />
+			<webinf dir="${web.dir}/WEB-INF">
+				<include name="**/*.*" />
+				<exclude name="web.xml" />
+				<exclude name="lib/**" />
+				<include name="classes/**" />
+			</webinf>
+			<zipfileset prefix="WEB-INF/lib" dir="lib">
+				<include name="*.jar" />
+			</zipfileset>
+		</war>
+	</target>
+
+	<target name="jar" depends="compile" description="creates aws test app jar">
+		<jar jarfile="${build.dir}/test.jar">
+			<fileset dir="${classes.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</jar>
+	</target>
+
+	<!-- ============================ -->
+	<!-- Deployment Targets            -->
+	<!-- ============================ -->
+
+	<target name="build_dev_war">
+		<antcall target="war">
+			<param name="clean" value="clean" />
+		</antcall>
+	</target>
+</project>
+
